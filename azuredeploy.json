@@ -1,0 +1,57 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "resources": [
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2016-06-01",
+      "name": "OnPage-Sentinel-Integration",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowDefinition.json#",
+          "actions": {
+            "SendToOnPage": {
+              "inputs": {
+                "method": "POST",
+                "uri": "https://webhook.onpage.com/gw/v1/page",
+                "headers": {
+                  "Content-Type": "application/json"
+                },
+                "body": {
+                  "clientId": "<YOUR-CLIENT-ID>",
+                  "secretKey": "<YOUR-SECRET-KEY>",
+                  "message": {
+                    "subject": "[concat('Sentinel Alert: ', triggerBody()?['name'])]",
+                    "body": "[concat('Severity: ', triggerBody()?['severity'], '\n\nDescription: ', triggerBody()?['description'])]",
+                    "recipients": ["OPID1", "OPID2"],
+                    "priority": "HIGH"
+                  }
+                }
+              },
+              "runAfter": {},
+              "type": "Http"
+            }
+          },
+          "triggers": {
+            "SentinelAlertTrigger": {
+              "type": "Request",
+              "inputs": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": { "type": "string" },
+                    "severity": { "type": "string" },
+                    "description": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "outputs": {}
+        },
+        "kind": "Stateful"
+      }
+    }
+  ]
+}
